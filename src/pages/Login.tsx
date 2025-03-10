@@ -4,39 +4,56 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // try {
-    //   const response = await axios.post("/api/login", {
-    //     email,
-    //     password,
-    //   });
-    //   // Store the JWT token in localStorage or sessionStorage
-    //   localStorage.setItem("token", response.data.token);
-    //   navigate("/dashboard");
-    // } catch (error) {
-    //   setError("Invalid credentials. Please try again.");
-    // }
+    try {
+      // Make sure to update this endpoint to match your backend
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
+        {
+          username, // Changed from email to username
+          password,
+        }
+      );
+
+      const { token } = response.data;
+
+      // Store the JWT token in localStorage
+      localStorage.setItem("token", token);
+
+      // console.log(localStorage.getItem("token"));
+      // Redirect to the dashboard
+      navigate("/dashboard");
+    } catch (error) {
+      setError("Invalid credentials. Please try again.");
+    }
   };
 
   return (
-    <Box sx={{ maxWidth: 400, margin: "0 auto", padding: 2, backgroundColor: "rgba(255, 255, 255, 0.9)"}}>
+    <Box
+      sx={{
+        maxWidth: 400,
+        margin: "0 auto",
+        padding: 2,
+        backgroundColor: "rgba(255, 255, 255, 0.9)",
+      }}
+    >
       <Typography variant="h5" gutterBottom>
         Login
       </Typography>
       {error && <Typography color="error">{error}</Typography>}
       <form onSubmit={handleLogin}>
         <TextField
-          label="Email"
+          label="Username" // Changed from Email to Username
           fullWidth
           margin="normal"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
         <TextField

@@ -1,20 +1,53 @@
 import React, { useState } from "react";
-import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemText, useMediaQuery } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  useMediaQuery,
+  Menu,
+  MenuItem,
+} from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Link, useLocation } from "react-router-dom";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const location = useLocation();
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
-  
-  // For detecting mobile screen size
+  const navigate = useNavigate();
+  const isAuthPage =
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/";
+
   const isMobile = useMediaQuery("(max-width:600px)");
-
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Toggle drawer
+  const token = localStorage.getItem("token"); // Check if logged in
+
   const toggleDrawer = () => {
     setOpenDrawer(!openDrawer);
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+    setOpenDrawer(false);
   };
 
   const renderDesktopLinks = () => (
@@ -33,54 +66,103 @@ const Navbar = () => {
 
   const renderMobileLinks = () => (
     <List>
-      <ListItem component={Link} to="/dashboard" onClick={toggleDrawer}>
-        <ListItemText primary="Dashboard" />
-      </ListItem>
-      <ListItem component={Link} to="/applications" onClick={toggleDrawer}>
-        <ListItemText primary="Applications" />
-      </ListItem>
-      <ListItem component={Link} to="/add-application" onClick={toggleDrawer}>
-        <ListItemText primary="Add Application" />
-      </ListItem>
+      {token ? (
+        <>
+          <ListItem component={Link} to="/dashboard" onClick={toggleDrawer}>
+            <ListItemText primary="Dashboard" />
+          </ListItem>
+          <ListItem component={Link} to="/applications" onClick={toggleDrawer}>
+            <ListItemText primary="Applications" />
+          </ListItem>
+          <ListItem
+            component={Link}
+            to="/add-application"
+            onClick={toggleDrawer}
+          >
+            <ListItemText primary="Add Application" />
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleSignOut}>
+              <ListItemText primary="Sign Out" />
+            </ListItemButton>
+          </ListItem>
+        </>
+      ) : (
+        <>
+          <ListItem component={Link} to="/login" onClick={toggleDrawer}>
+            <ListItemText primary="Login" />
+          </ListItem>
+          <ListItem component={Link} to="/register" onClick={toggleDrawer}>
+            <ListItemText primary="Register" />
+          </ListItem>
+        </>
+      )}
     </List>
   );
 
   return (
-    <AppBar position="sticky">
+    <AppBar position="sticky" sx={{ backgroundColor: "#2563EB" }}>
       <Toolbar>
-      <Typography variant="h6" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-        <Link to="/dashboard" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-          <img src="src/assets/logo.png" alt="CareerDash Logo" style={{ height: '30px', marginRight: '8px' }} />
-          CareerDash
-        </Link>
-      </Typography>
+        <Typography
+          variant="h6"
+          sx={{ flexGrow: 1, display: "flex", alignItems: "center" }}
+        >
+          <Link
+            to="/dashboard"
+            style={{
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <img
+              src="src/assets/logo.png"
+              alt="CareerDash Logo"
+              style={{ height: "30px", marginRight: "8px" }}
+            />
+            CareerDash
+          </Link>
+        </Typography>
 
-
-        {/* Mobile Icon Button */}
         {isMobile ? (
-          <IconButton color="inherit" onClick={toggleDrawer}>
-            <MenuIcon />
-          </IconButton>
-        ) : (
-          // Desktop Links
-          !isAuthPage && renderDesktopLinks()
-        )}
-
-        {/* Drawer for mobile */}
-        <Drawer anchor="right" open={openDrawer} onClose={toggleDrawer}>
-          {renderMobileLinks()}
-        </Drawer>
-
-        {/* Show login/register buttons if on login/register page */}
-        {isAuthPage && (
           <>
-            <Button color="inherit" component={Link} to="/login">
-              Login
-            </Button>
-            <Button color="inherit" component={Link} to="/register">
-              Register
-            </Button>
+            <IconButton color="inherit" onClick={toggleDrawer}>
+              <MenuIcon />
+            </IconButton>
+            <Drawer anchor="right" open={openDrawer} onClose={toggleDrawer}>
+              {renderMobileLinks()}
+            </Drawer>
           </>
+        ) : (
+          !isAuthPage && (
+            <>
+              {renderDesktopLinks()}
+              {token ? (
+                <>
+                  <IconButton color="inherit" onClick={handleProfileMenuOpen}>
+                    <AccountCircleIcon />
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleProfileMenuClose}
+                  >
+                    <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <>
+                  <Button color="inherit" component={Link} to="/login">
+                    Login
+                  </Button>
+                  <Button color="inherit" component={Link} to="/register">
+                    Register
+                  </Button>
+                </>
+              )}
+            </>
+          )
         )}
       </Toolbar>
     </AppBar>

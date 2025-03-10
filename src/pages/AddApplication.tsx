@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, MenuItem, FormControl, InputLabel, Select, FormHelperText, Snackbar } from "@mui/material";
+import { Box, TextField, Button, Typography, Snackbar } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { SelectChangeEvent } from "@mui/material";
 
 const AddApplication = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     company: "",
-    position: "",
-    status: "",
-    date: "",
+    role: "",
+    applicationDate: "",
+    notes: "", // New optional field
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -20,28 +19,49 @@ const AddApplication = () => {
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent<string>) => {
-    const { value } = e.target;
-    setFormData((prevState) => ({ ...prevState, status: value }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.company || !formData.position || !formData.status || !formData.date) {
-      setSnackbarMessage("Please fill in all fields and ensure the date is valid.");
+    if (!formData.company || !formData.role || !formData.applicationDate) {
+      setSnackbarMessage("Please fill in all required fields.");
       setSnackbarOpen(true);
       return;
     }
 
     try {
-      await axios.post("http://localhost:5000/applications", formData);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.warn("🚨 No token found, redirecting to login...");
+        navigate("/login");
+        return;
+      }
+
+      const dataToSend = {
+        ...formData,
+        status: "PENDING", // Default status
+      };
+
+      // console.log("🔥 Sending Data:", dataToSend);
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/job-applications`,
+        dataToSend,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
       setSnackbarMessage("Application added successfully!");
       setSnackbarOpen(true);
       setTimeout(() => {
         navigate("/applications");
       }, 1500);
-    } catch {
+    } catch (error) {
+      console.error("❌ Error adding application:", error);
       setSnackbarMessage("Failed to add application. Please try again.");
       setSnackbarOpen(true);
     }
@@ -53,7 +73,7 @@ const AddApplication = () => {
         padding: 4,
         maxWidth: 600,
         margin: "auto",
-        backgroundColor: "rgba(255, 255, 255, 0.9)", // White with slight transparency
+        backgroundColor: "rgba(255, 255, 255, 0.9)",
         borderRadius: 4,
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
       }}
@@ -73,40 +93,35 @@ const AddApplication = () => {
         />
         <TextField
           fullWidth
-          label="Position"
-          name="position"
-          value={formData.position}
+          label="Role"
+          name="role"
+          value={formData.role}
           onChange={handleTextFieldChange}
           required
           sx={{ marginBottom: 2 }}
         />
-        <FormControl fullWidth sx={{ marginBottom: 2 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            label="Status"
-            name="status"
-            value={formData.status}
-            onChange={handleSelectChange}
-            required
-          >
-            <MenuItem value="Pending">Pending</MenuItem>
-            <MenuItem value="Accepted">Accepted</MenuItem>
-            <MenuItem value="Rejected">Rejected</MenuItem>
-          </Select>
-          <FormHelperText>Choose the current status of your application</FormHelperText>
-        </FormControl>
         <TextField
           fullWidth
           label="Date"
-          name="date"
+          name="applicationDate"
           type="date"
-          value={formData.date}
+          value={formData.applicationDate}
           onChange={handleTextFieldChange}
           required
           sx={{ marginBottom: 2 }}
           InputLabelProps={{
             shrink: true,
           }}
+        />
+        <TextField
+          fullWidth
+          label="Notes (Optional)"
+          name="notes"
+          value={formData.notes}
+          onChange={handleTextFieldChange}
+          multiline
+          rows={3}
+          sx={{ marginBottom: 2 }}
         />
         <Button variant="contained" color="primary" type="submit">
           Add Application

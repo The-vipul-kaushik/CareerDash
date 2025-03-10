@@ -1,27 +1,46 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Card, CardContent } from "@mui/material";
+import { Box, Typography, Card, CardContent, Grid } from "@mui/material";
 import axios from "axios";
 import { useSpring, animated } from "react-spring";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
-  const [applicationsData, setApplicationsData] = useState<any>([]);
-  const [totalApplications, setTotalApplications] = useState<number>(0);
-  const [pendingApplications, setPendingApplications] = useState<number>(0);
-  const [acceptedApplications, setAcceptedApplications] = useState<number>(0);
-  const [rejectedApplications, setRejectedApplications] = useState<number>(0);
+  const [applicationsData, setApplicationsData] = useState<any[]>([]);
+  const [counts, setCounts] = useState({
+    total: 0,
+    pending: 0,
+    interviewing: 0,
+    offered: 0,
+    rejected: 0,
+  });
 
-  const totalAppsAnimation = useSpring({ number: totalApplications, from: { number: 0 }, config: { duration: 1000 } });
-  const pendingAppsAnimation = useSpring({ number: pendingApplications, from: { number: 0 }, config: { duration: 1000 } });
-  const acceptedAppsAnimation = useSpring({ number: acceptedApplications, from: { number: 0 }, config: { duration: 1000 } });
-  const rejectedAppsAnimation = useSpring({ number: rejectedApplications, from: { number: 0 }, config: { duration: 1000 } });
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchApplicationsData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.warn("🚨 No token found, redirecting to login...");
+        navigate("/login");
+        return;
+      }
+
       try {
-        const response = await axios.get("http://localhost:5000/applications");
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/job-applications`,
+          {
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            withCredentials: true,
+          }
+        );
+
         setApplicationsData(response.data);
-      } catch (err) {
-        console.error("Error fetching applications data", err);
+      } catch (err: any) {
+        console.error("❌ Error fetching applications:", err);
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          console.warn("🚨 Unauthorized! Redirecting to login...");
+          navigate("/login");
+        }
       }
     };
 
@@ -29,70 +48,66 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    setTotalApplications(applicationsData.length);
-    setPendingApplications(applicationsData.filter((app: any) => app.status === "Pending").length);
-    setAcceptedApplications(applicationsData.filter((app: any) => app.status === "Accepted").length);
-    setRejectedApplications(applicationsData.filter((app: any) => app.status === "Rejected").length);
+    setCounts({
+      total: applicationsData.length,
+      pending: applicationsData.filter((app) => app.status === "PENDING").length,
+      interviewing: applicationsData.filter((app) => app.status === "INTERVIEWING").length,
+      offered: applicationsData.filter((app) => app.status === "OFFERED").length,
+      rejected: applicationsData.filter((app) => app.status === "REJECTED").length,
+    });
   }, [applicationsData]);
 
+  const animations = {
+    total: useSpring({ number: counts.total, from: { number: 0 }, config: { duration: 1000 } }),
+    pending: useSpring({ number: counts.pending, from: { number: 0 }, config: { duration: 1000 } }),
+    interviewing: useSpring({ number: counts.interviewing, from: { number: 0 }, config: { duration: 1000 } }),
+    offered: useSpring({ number: counts.offered, from: { number: 0 }, config: { duration: 1000 } }),
+    rejected: useSpring({ number: counts.rejected, from: { number: 0 }, config: { duration: 1000 } }),
+  };
+
+  const stats = [
+    { label: "Total Applications", value: animations.total, color: "#e3f2fd" },
+    { label: "Pending", value: animations.pending, color: "#ffecb3" },
+    { label: "Interviewing", value: animations.interviewing, color: "#fff9c4" },
+    { label: "Offered", value: animations.offered, color: "#c8e6c9" },
+    { label: "Rejected", value: animations.rejected, color: "#ffcdd2" },
+  ];
+
   return (
-    <Box sx={{ padding: 2 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ padding: 3 }}>
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", textAlign: "center" }}>
         Dashboard
       </Typography>
-
-      {/* Grid-based layout with flexible card widths */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", // Automatically adjusts the card size
-          gap: 2,
-        }}
-      >
-        <Card sx={{ backgroundColor: "#e3f2fd" }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Total Applications
-            </Typography>
-            <Typography variant="h4">
-              <animated.div>{totalAppsAnimation.number.to((n: number) => n.toFixed(0))}</animated.div>
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ backgroundColor: "#fff3e0" }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Pending Applications
-            </Typography>
-            <Typography variant="h4">
-              <animated.div>{pendingAppsAnimation.number.to((n: number) => n.toFixed(0))}</animated.div>
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ backgroundColor: "#c8e6c9" }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Accepted Offers
-            </Typography>
-            <Typography variant="h4">
-              <animated.div>{acceptedAppsAnimation.number.to((n: number) => n.toFixed(0))}</animated.div>
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ backgroundColor: "#f8bbd0" }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Rejected Applications
-            </Typography>
-            <Typography variant="h4">
-              <animated.div>{rejectedAppsAnimation.number.to((n: number) => n.toFixed(0))}</animated.div>
-            </Typography>
-          </CardContent>
-        </Card>
-      </Box>
+      <Grid container spacing={3} justifyContent="center">
+        {stats.map(({ label, value, color }) => (
+          <Grid item xs={12} sm={6} md={4} key={label}>
+            <Card
+              sx={{
+                backgroundColor: color,
+                textAlign: "center",
+                height: 150,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 3,
+                boxShadow: 2,
+                transition: "transform 0.2s",
+                "&:hover": { transform: "scale(1.05)", boxShadow: 4 },
+              }}
+            >
+              <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                  {label}
+                </Typography>
+                <Typography variant="h4" sx={{ color: "#333" }}>
+                  <animated.div>{value.number.to((n) => n.toFixed(0))}</animated.div>
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 };

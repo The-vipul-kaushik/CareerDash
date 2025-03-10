@@ -16,63 +16,97 @@ import axios from "axios";
 import { SelectChangeEvent } from "@mui/material";
 
 const EditApplication = () => {
-  const { id } = useParams(); // Get application ID from URL params
+  const { id } = useParams();
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     company: "",
-    position: "",
+    role: "",
+    applicationDate: "",
     status: "",
-    date: "",
+    notes: "",
   });
-
-  const [error, setError] = useState<string | null>(null);
-
-  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  // Fetch the application data to pre-fill the form
   useEffect(() => {
     const fetchApplication = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/applications/${id}`);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.warn("🚨 No token found, redirecting to login...");
+          navigate("/login");
+          return;
+        }
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/job-applications/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
         setFormData(response.data);
-      } catch (err) {
-        setError("Failed to fetch application details. Please try again.");
+      } catch (error) {
+        console.error("❌ Error fetching application details:", error);
+        setSnackbarMessage("Failed to fetch application details.");
+        setSnackbarOpen(true);
       }
     };
     if (id) fetchApplication();
-  }, [id]);
+  }, [id, navigate]);
 
-  // Handle form input changes for TextField components
   const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  // Handle Select change (for Status dropdown)
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
     const { value } = e.target;
     setFormData((prevState) => ({ ...prevState, status: value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      await axios.put(`http://localhost:5000/applications/${id}`, formData);
-      setSnackbarMessage("Application updated successfully!");
-      setOpenSnackbar(true);
-      setTimeout(() => navigate("/applications"), 2000);
-    } catch (err) {
-      setError("Failed to update application. Please try again.");
+    if (
+      !formData.company ||
+      !formData.role ||
+      !formData.status ||
+      !formData.applicationDate
+    ) {
+      setSnackbarMessage("Please fill in all required fields.");
+      setSnackbarOpen(true);
+      return;
     }
-  };
 
-  // Close Snackbar
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.warn("🚨 No token found, redirecting to login...");
+        navigate("/login");
+        return;
+      }
+      // console.log("🔥🔥🔥" + formData);
+
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/job-applications/${id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      setSnackbarMessage("Application updated successfully!");
+      setSnackbarOpen(true);
+      setTimeout(() => navigate("/applications"), 1500);
+    } catch (error) {
+      console.error("❌ Error updating application:", error);
+      setSnackbarMessage("Failed to update application.");
+      setSnackbarOpen(true);
+    }
   };
 
   return (
@@ -81,7 +115,7 @@ const EditApplication = () => {
         padding: 4,
         maxWidth: 600,
         margin: "auto",
-        backgroundColor: "rgba(255, 255, 255, 0.9)", // White with slight transparency
+        backgroundColor: "rgba(255, 255, 255, 0.9)",
         borderRadius: 4,
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
       }}
@@ -89,9 +123,6 @@ const EditApplication = () => {
       <Typography variant="h4" gutterBottom>
         Edit Application
       </Typography>
-
-      {error && <Typography color="error">{error}</Typography>}
-
       <form onSubmit={handleSubmit}>
         <TextField
           fullWidth
@@ -104,9 +135,9 @@ const EditApplication = () => {
         />
         <TextField
           fullWidth
-          label="Position"
-          name="position"
-          value={formData.position}
+          label="Role"
+          name="role"
+          value={formData.role}
           onChange={handleTextFieldChange}
           required
           sx={{ marginBottom: 2 }}
@@ -120,18 +151,21 @@ const EditApplication = () => {
             onChange={handleSelectChange}
             required
           >
-            <MenuItem value="Pending">Pending</MenuItem>
-            <MenuItem value="Accepted">Accepted</MenuItem>
-            <MenuItem value="Rejected">Rejected</MenuItem>
+            <MenuItem value="PENDING">PENDING</MenuItem>
+            <MenuItem value="INTERVIEWING">INTERVIEWING</MenuItem>
+            <MenuItem value="OFFERED">OFFERED</MenuItem>
+            <MenuItem value="REJECTED">REJECTED</MenuItem>
           </Select>
-          <FormHelperText>Choose the current status of your application</FormHelperText>
+          <FormHelperText>
+            Choose the current status of your application
+          </FormHelperText>
         </FormControl>
         <TextField
           fullWidth
           label="Date"
-          name="date"
+          name="applicationDate"
           type="date"
-          value={formData.date}
+          value={formData.applicationDate}
           onChange={handleTextFieldChange}
           required
           sx={{ marginBottom: 2 }}
@@ -143,11 +177,10 @@ const EditApplication = () => {
           Update Application
         </Button>
       </form>
-
       <Snackbar
-        open={openSnackbar}
-        autoHideDuration={2000}
-        onClose={handleCloseSnackbar}
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
         message={snackbarMessage}
       />
     </Box>

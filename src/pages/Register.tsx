@@ -12,17 +12,19 @@ const Register = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // try {
-    //   const response = await axios.post("/api/register", {
-    //     username,
-    //     email,
-    //     password,
-    //   });
-    //   // Redirect to login page after successful registration
-    //   navigate("/login");
-    // } catch (error) {
-    //   setError("Error registering. Please try again.");
-    // }
+    try {
+      // Send the registration data to the backend
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, {
+        username,
+        email,
+        password,
+      });
+
+      // Redirect to the login page after successful registration
+      navigate("/login");
+    } catch (error) {
+      setError("Error registering. Please try again.");
+    }
   };
 
   return (
