@@ -17,6 +17,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import logo from '../assets/logo.png';
 
 const Navbar = () => {
   const location = useLocation();
@@ -117,7 +118,7 @@ const Navbar = () => {
             }}
           >
             <img
-              src="src/assets/logo.png"
+              src={logo}
               alt="CareerDash Logo"
               style={{ height: "30px", marginRight: "8px" }}
             />

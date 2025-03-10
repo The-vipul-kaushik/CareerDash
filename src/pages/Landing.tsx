@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Button, Typography, Container, Grid } from "@mui/material";
 import { Link } from "react-router-dom";
+import logo from '../assets/logo.png'
 
 const Landing = () => {
   return (
@@ -64,7 +65,7 @@ const Landing = () => {
           {/* Right Image */}
           <Grid item xs={12} md={6}>
             <img
-              src="src/assets/logo.png"
+              src={logo}
               alt="Job Application Management"
               style={{ width: "30vh", maxWidth: "30rem" }}
             />
