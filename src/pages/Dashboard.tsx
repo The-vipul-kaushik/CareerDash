@@ -29,9 +29,11 @@ const Dashboard = () => {
         const response = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/job-applications`,
           {
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            withCredentials: true,
-          }
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
         );
 
         setApplicationsData(response.data);
@@ -50,19 +52,44 @@ const Dashboard = () => {
   useEffect(() => {
     setCounts({
       total: applicationsData.length,
-      pending: applicationsData.filter((app) => app.status === "PENDING").length,
-      interviewing: applicationsData.filter((app) => app.status === "INTERVIEWING").length,
-      offered: applicationsData.filter((app) => app.status === "OFFERED").length,
-      rejected: applicationsData.filter((app) => app.status === "REJECTED").length,
+      pending: applicationsData.filter((app) => app.status === "PENDING")
+        .length,
+      interviewing: applicationsData.filter(
+        (app) => app.status === "INTERVIEWING",
+      ).length,
+      offered: applicationsData.filter((app) => app.status === "OFFERED")
+        .length,
+      rejected: applicationsData.filter((app) => app.status === "REJECTED")
+        .length,
     });
   }, [applicationsData]);
 
   const animations = {
-    total: useSpring({ number: counts.total, from: { number: 0 }, config: { duration: 1000 } }),
-    pending: useSpring({ number: counts.pending, from: { number: 0 }, config: { duration: 1000 } }),
-    interviewing: useSpring({ number: counts.interviewing, from: { number: 0 }, config: { duration: 1000 } }),
-    offered: useSpring({ number: counts.offered, from: { number: 0 }, config: { duration: 1000 } }),
-    rejected: useSpring({ number: counts.rejected, from: { number: 0 }, config: { duration: 1000 } }),
+    total: useSpring({
+      number: counts.total,
+      from: { number: 0 },
+      config: { duration: 1000 },
+    }),
+    pending: useSpring({
+      number: counts.pending,
+      from: { number: 0 },
+      config: { duration: 1000 },
+    }),
+    interviewing: useSpring({
+      number: counts.interviewing,
+      from: { number: 0 },
+      config: { duration: 1000 },
+    }),
+    offered: useSpring({
+      number: counts.offered,
+      from: { number: 0 },
+      config: { duration: 1000 },
+    }),
+    rejected: useSpring({
+      number: counts.rejected,
+      from: { number: 0 },
+      config: { duration: 1000 },
+    }),
   };
 
   const stats = [
@@ -75,7 +102,10 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", textAlign: "center" }}>
+      <Typography
+        variant="h4"
+        sx={{ mb: 3, fontWeight: "bold", textAlign: "center" }}
+      >
         Dashboard
       </Typography>
       <Grid container spacing={3} justifyContent="center">
@@ -97,11 +127,16 @@ const Dashboard = () => {
               }}
             >
               <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#333" }}
+                >
                   {label}
                 </Typography>
                 <Typography variant="h4" sx={{ color: "#333" }}>
-                  <animated.div>{value.number.to((n) => n.toFixed(0))}</animated.div>
+                  <animated.div>
+                    {value.number.to((n) => n.toFixed(0))}
+                  </animated.div>
                 </Typography>
               </CardContent>
             </Card>

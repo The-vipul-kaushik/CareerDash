@@ -41,7 +41,6 @@ const EditApplication = () => {
           `${import.meta.env.VITE_BACKEND_URL}/api/job-applications/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
           }
         );
         setFormData(response.data);
