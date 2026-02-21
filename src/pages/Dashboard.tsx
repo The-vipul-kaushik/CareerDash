@@ -36,11 +36,21 @@ const Dashboard = () => {
           },
         );
 
-        setApplicationsData(response.data);
+        console.log("API response:", response.data);
+
+        // Adjust based on backend response
+        if (Array.isArray(response.data)) {
+          setApplicationsData(response.data);
+        } else if (Array.isArray(response.data.applications)) {
+          setApplicationsData(response.data.applications);
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setApplicationsData([]); // fallback to empty array
+        }
       } catch (err: any) {
         console.error("❌ Error fetching applications:", err);
         if (err.response?.status === 401 || err.response?.status === 403) {
-          console.warn("🚨 Unauthorized! Redirecting to login...");
+          localStorage.removeItem("token");
           navigate("/login");
         }
       }
