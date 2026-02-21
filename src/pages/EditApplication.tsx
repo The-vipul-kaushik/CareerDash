@@ -12,7 +12,7 @@ import {
   Snackbar,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { SelectChangeEvent } from "@mui/material";
 
 const EditApplication = () => {
@@ -41,11 +41,22 @@ const EditApplication = () => {
           `${import.meta.env.VITE_BACKEND_URL}/api/job-applications/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
-        setFormData(response.data);
-      } catch (error) {
-        console.error("❌ Error fetching application details:", error);
+
+        console.log("API response:", response.data);
+
+        if (response.data?.data) {
+          setFormData(response.data.data);
+        } else {
+          console.error("Unexpected response format:", response.data);
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          console.error("❌ Axios error:", err.response?.data || err.message);
+        } else {
+          console.error("❌ Unknown error:", err);
+        }
         setSnackbarMessage("Failed to fetch application details.");
         setSnackbarOpen(true);
       }
@@ -84,7 +95,6 @@ const EditApplication = () => {
         navigate("/login");
         return;
       }
-      // console.log("🔥🔥🔥" + formData);
 
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/job-applications/${id}`,
@@ -94,15 +104,18 @@ const EditApplication = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          withCredentials: true,
-        }
+        },
       );
 
       setSnackbarMessage("Application updated successfully!");
       setSnackbarOpen(true);
       setTimeout(() => navigate("/applications"), 1500);
-    } catch (error) {
-      console.error("❌ Error updating application:", error);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        console.error("❌ Axios error:", err.response?.data || err.message);
+      } else {
+        console.error("❌ Unknown error:", err);
+      }
       setSnackbarMessage("Failed to update application.");
       setSnackbarOpen(true);
     }
@@ -171,6 +184,16 @@ const EditApplication = () => {
           InputLabelProps={{
             shrink: true,
           }}
+        />
+        <TextField
+          fullWidth
+          label="Notes (Optional)"
+          name="notes"
+          value={formData.notes}
+          onChange={handleTextFieldChange}
+          multiline
+          rows={3}
+          sx={{ marginBottom: 2 }}
         />
         <Button variant="contained" color="primary" type="submit">
           Update Application

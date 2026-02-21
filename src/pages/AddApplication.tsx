@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Snackbar } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const AddApplication = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const AddApplication = () => {
     company: "",
     role: "",
     applicationDate: "",
-    notes: "", // New optional field
+    notes: "",
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -42,9 +42,7 @@ const AddApplication = () => {
         status: "PENDING", // Default status
       };
 
-      // console.log("🔥 Sending Data:", dataToSend);
-
-      await axios.post(
+      const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/job-applications`,
         dataToSend,
         {
@@ -55,13 +53,20 @@ const AddApplication = () => {
         }
       );
 
+      console.log("✅ Application added:", response.data);
+
       setSnackbarMessage("Application added successfully!");
       setSnackbarOpen(true);
+
       setTimeout(() => {
         navigate("/applications");
       }, 1500);
-    } catch (error) {
-      console.error("❌ Error adding application:", error);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        console.error("❌ Axios error:", err.response?.data || err.message);
+      } else {
+        console.error("❌ Unknown error:", err);
+      }
       setSnackbarMessage("Failed to add application. Please try again.");
       setSnackbarOpen(true);
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -23,11 +23,9 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Link } from "react-router-dom";
 import axios from "axios";
 
 const ApplicationList = () => {
@@ -37,7 +35,6 @@ const ApplicationList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -54,13 +51,21 @@ const ApplicationList = () => {
       try {
         const response = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/job-applications`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
-        setApplications(response.data);
-        setFilteredApplications(response.data);
+
+        console.log("API response:", response.data);
+
+        if (Array.isArray(response.data.data)) {
+          setApplications(response.data.data);
+          setFilteredApplications(response.data.data);
+        } else {
+          console.error("Unexpected response format:", response.data);
+          setApplications([]);
+          setFilteredApplications([]);
+        }
       } catch (err) {
+        console.error("❌ Error fetching applications:", err);
         navigate("/login");
       }
     };
@@ -72,8 +77,10 @@ const ApplicationList = () => {
     if (searchQuery) {
       filtered = filtered.filter(
         (app) =>
-          app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          app.role.toLowerCase().includes(searchQuery.toLowerCase())
+          (app.company &&
+            app.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (app.role &&
+            app.role.toLowerCase().includes(searchQuery.toLowerCase())),
       );
     }
     if (statusFilter) {
@@ -90,13 +97,11 @@ const ApplicationList = () => {
     if (selectedAppId !== null) {
       try {
         await axios.delete(
-          `${
-            import.meta.env.VITE_BACKEND_URL
-          }/api/job-applications/${selectedAppId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `${import.meta.env.VITE_BACKEND_URL}/api/job-applications/${selectedAppId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         setApplications((prevApps) =>
-          prevApps.filter((app) => app.id !== selectedAppId)
+          prevApps.filter((app) => app.id !== selectedAppId),
         );
         setOpenDeleteDialog(false);
         setOpenSnackbar(true);
@@ -207,6 +212,14 @@ const ApplicationList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ✅ Snackbar for delete confirmation */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        message="Application deleted successfully"
+      />
     </Box>
   );
 };
