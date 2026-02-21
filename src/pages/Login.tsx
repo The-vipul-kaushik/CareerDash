@@ -18,16 +18,18 @@ const Login = () => {
         {
           username, // Changed from email to username
           password,
-        }
+        },
       );
 
-      const { token } = response.data;
+      const token = response.data?.token || response.data?.jwt;
 
-      // Store the JWT token in localStorage
+      if (!token) {
+        console.error("Token not received:", response.data);
+        setError("Login failed. No token received.");
+        return;
+      }
+
       localStorage.setItem("token", token);
-
-      // console.log(localStorage.getItem("token"));
-      // Redirect to the dashboard
       navigate("/dashboard");
     } catch (error) {
       setError("Invalid credentials. Please try again.");
